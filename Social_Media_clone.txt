@@ -1,0 +1,1653 @@
+*************KEY FEATURES*************
+1. It will have groups
+2. It will have multiple users and authorisations
+3. It will have posts in the groups
+4. Can link user profiles with a @ symbol
+5. It will have multiple applications
+
+*************PROJECT SETUP*************
+
+To see a list if envs, type conda info --envs in the command terminal
+Activate or create a new virtual environment
+
+To create cd into the correct directory then type
+conda create --name NAME OF YOUR ENV HERE (we have used SocialMediaEnv)
+
+To activate
+activate NAME OF YOUR ENV
+
+Create a new project folder and cd into it, we will create simple_social_clone for our project
+
+Now we can start our project and add an app
+Make sure you are in the correct directory, in our case simple_social_clone
+then type
+
+django-admin startproject YOUR PROJECT NAME HERE (we will use simplesocial)
+
+now cd into that new directory and start the app by typing
+django-admin startapp accounts (we are going to have multiple apps in the simplesocial folder)
+
+Now lets add a couple more directories that we will need
+In simplesocial folder create a
+templates dir and name is templates
+static dir and name it static, in that folder create a new folder and name it simplesocial, inside simplesocial create 2 folders and name them css and js
+In some projects, there is a top level css folder and inside that you would have a master cc file
+
+*************SETTINGS.PY*************
+Now we can setup our settings.py file, which in our case is located in simple_social_clone/simplesocial/simplesocial
+
+We can first add our templates dir as follows
+TEMPLATE_DIR = BASE_DIR/'templates'
+
+Then scroll down to INSTALLED_APPS = [ and add the new app, in our case we named it accounts
+'accounts',
+
+Scoll down to where it says TEMPLATES = [ and add the TEMPLATE_DIR
+'DIRS': [TEMPLATE_DIR,],
+
+Scroll down to where it says STATIC_URL = '/static/' and add the STATIC_FILES directory as follows as a list object
+STATICFILES_DIRS = STATICFILES_DIRS = [BASE_DIR/'static']
+
+Now we need to migrate, so in the command line type
+python manage.py migrate
+Then we need to make the migrations for the accounts app we just created, so in the command line type
+python manage.py makemaigrations accounts
+Then we need to migrate again, so again in the command line type
+python manage.py migrate
+Now run the server by typing the following in the command line
+python manage.py runserver
+As long as you have no errors, copy the url and paste it in your browser window
+As long as you see a django window, then you have no errors so far
+
+*************TEMPLATES AND APP SETUP*************
+Now lets create some basic template files, so go to the templates folder, which in our case is in simplesocial
+here we will create a base.html file and index.html file
+The base.html is where will extend from and the index.html is our home page
+
+*************BASE & INDEX.HTML*************
+Add the basic html into the index.html page and setup a basic homepage
+Add a h1 to the body and add some test, we added Welcome to Star Social
+As we know we are going to be extending from base.html, we can remove the boilerplate from the html, then we can add the template tagging at the top of the page as follows
+{% extends "base.html" %}
+Add and end a content block and add the h1 to that as follows
+{% block content %}
+  <h1>Welcome to Star Social</h1>
+{% endblock content %}
+
+Now we can setup our base.html file
+As we are extending from the base.html file, we need to add the boilerplate
+Now inside the body, we can setup the block as follows
+<body>
+  {% block content %}
+
+  {% endblock content %}
+</body>
+
+*************HOMEPAGE VIEWS.PY MAIN*************
+To link base.html and index.html to my web application, we need open the urls.py file, in our case located in simplesocial/simplesocial
+First add a views.py file to create a simple view for our index.html or homepage.
+In the new views.py file, we need to import as follows
+from django.views.generic import TemplateView
+
+template_name is a django keyword. The name of the template to load and render.
+Now create a class that will inherit the TemplateViewas follows
+class HomePage(TemplateView):
+    template_name = 'index.html'
+
+*************URLS.PY*************
+Now go to urls.py file to link the homepage, first we need to import as follows (. means it will search in the current directory)
+from django.contrib import admin
+from django.urls import path, include
+from . import views
+
+Now we can add it to our url patterns
+we need to ad as.view as it is a class based view (TemplateView)
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', views.HomePage.as_view(), name='home'),
+]
+
+Run the server to make sure we have no errors, as long as you have no errors, copy the url and paste it into your browser and you should see the home page h1 heading
+
+*************MODELS.PY*************
+Now we can setup our accounts application, so go to the accounts folder, in our case simple_social_clone/simplesocial
+First we will create a simple model, so open the models.py file
+For this we will use djangos built in models, so we need to do an import
+We will import auth as this is built into django and it has alot of authorisation tools for accounts built in
+Create a class and name it User, inherit from auth.models.User (this is built into django)
+also inherit auth.models.PermissionsMixin
+Inside the class we will have a string representation of the object to return the user as follows
+The varaible username is a built in attribute in User
+from django.db import models
+from django.contrib import auth
+
+# Create your models here.
+class User(auth.models.User, auth.models.PermissionsMixin):
+    def __str__(self):
+        return f"@ {self.username}"
+
+Now we need to create a view for this model, so go to the main views.py file, in our case located in simplesocial/accounts
+We need to do imports first, we us reverse_lazy incase someone is logged in or out, it will tell them where to go
+We also import forms and we can use . as it will look in the same directory.
+We can now create a class and call it SignUp as a CreateView CBV (you need to import CreateView though)
+from django.shortcuts import render
+from django.urls import reverse_lazy
+from . import forms
+from djano.views.generic import CreateView
+
+# Create your views here.
+class SignUp(CreateView):
+
+
+*************FORMS.PY*************
+We need to create a forms.py file, so in accounts create a forms.py file and here we can create the forms for signing up
+First we need to import a couple of things
+The get_user method takes a user_id – which could be a username, database ID or whatever, but has to be the primary key of your user object – and returns a user object or None.
+The UserCreationForm method is a UserCreationForm that is already built in the auth package
+Add a class and name it UserCreateForm and inherit from the UserCreationForm model (make sure your name is not the same as the inherited name)
+Add a Meta class and inside of the Meta class we can call the field attributes
+We will have a tuple of fields, the fields are already available from the contrib.auth package
+We will have a user fill out there username, email, password1 and password2 (password1 and 2 is just password confirmation)
+Then we set model to get_user_model(), this will allow us to get the currents user model
+We then add a function to add labels directly to the form
+Access the field that you want, in this case username and email, call label off iof that and set it as the Display Name and Email Address
+
+from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import UserCreationForm
+
+class UserCreateForm(UserCreationForm):
+    class Meta():
+        fields = ('username', 'email', 'password1', 'password2')
+        model = get_user_model()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['username'].label = 'Display Name'
+        self.fields['email'].label = 'Email Address'
+
+When a user signs up, we will call UserCreationForm
+Setup the Meta class with the required fields
+
+*************VIEWS.PY IN ACCOUNTS FOLDER*************
+We can now continue setting up the views.py in the accounts folder
+The class SignUp will take a form_class which is just an instance og UserCreateForm
+Add a success URL
+So what that means is, when someone has signed up to our webpage, on successful signup, I will reverse them back to the login page, but not until they hit the submit button
+Add a template_name which will point to accounts/signup.html
+from django.shortcuts import render
+from django.urls import reverse_lazy
+from . import forms
+from djano.views.generic import CreateView
+
+# Create your views here.
+class SignUp(CreateView):
+    form_class = forms.UserCreateForm
+    success_url = reverse_lazy('login')
+    template_name = 'accounts/signup.html'
+
+*************ACCOUNTS TEMPLATES*************
+Now we can deal with templates in the accounts folder
+Create a new folder in the accounts folder named templates
+In that folder, create a folder called accounts
+In that folder, create 2 html files and name them login.html and signup.html
+
+First incase it is not installed, we need to install bootstrap as follows in the command line
+pip install django-bootstrap4 (or whatever version number you want to use)
+You now need to add bootstrap to your settings.py file, in our case located in simple_social_clone/simple_social_clone
+Scroll down to INSTALLED_APPS and add bootstrap
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'bootstrap4',
+    'accounts',
+]
+Now go to our accounts app and open the html files, in our case located simplesocial/accounts/templates/accounts
+The 2 files we are going to work on are login.html and signup.html
+
+*************SIGNUP.HTML*************
+First we need to extend to the base.html file as follows
+{% extends 'base.html' %}
+And then load our bootstrap as follows
+{% load bootstrap4 %}
+Add and end our content block as follows
+{% block content %}
+{% endblock content %}
+
+Add a div inside the content block and give it the class of container
+Add a h1 inside the div and give it the text Sign Up
+Then call a form tag and make the action POST
+Inside the form, add our csrf token as follows
+{% csr_token %}
+Now create a form using the bootstrap we installed to make our form look alot nicer as follows
+{% bootstrap_form form %}
+Here is the link to the documentation
+https://django-bootstrap-v5.readthedocs.io/en/latest/
+Inside the form add a input button with a type of submit, value of sign up, add a btn class of secondary as follows
+<input type="submit" class="btn btn-secondary" value="Sign Up">
+
+{% extends 'base.html' %}
+
+{% load bootstrap4 %}
+
+{% block content %}
+
+  <div class="container">
+    <h1>Sign Up</h1>
+    <form method="POST">
+      {% csrf_token %}
+      {% bootstrap_form form %}
+      <input type="submit" class="btn btn-secondary" value="Sign Up">
+    </form>
+  </div>
+
+{% endblock content %}
+
+*************LOGIN.HTML*************
+This page will be alot similar to the sign up page
+
+First we need to extend to the base.html file as follows
+{% extends 'base.html' %}
+And then load our bootstrap as follows
+{% load bootstrap5 %}
+Add and end our content block as follows
+{% block content %}
+{% endblock content %}
+
+Add a div inside the content block and give it the class of container
+Add a h1 inside the div and give it the text Log In
+Then call a form tag and make the action POST
+Inside the form, add our csrf token as follows
+{% csr_token %}
+Now create a form using the bootstrap we installed to make our form look alot nicer as follows
+{% bootstrap_form form %}
+Here is the link to the documentation
+https://django-bootstrap-v5.readthedocs.io/en/latest/
+Inside the form add a input button with a type of submit, value of log in, add a btn class of secondary as follows
+<input type="submit" class="btn btn-secondary" value="Sign Up">
+
+*************VIEWS.PY AND URLS.PY*************
+Now we can make the connection between the login.html and signup.html files in the viwes.py and urls.py
+Open the views.py file, in our case located in simplesocial/accounts/views.py
+We also need to create a urls.py file in the accounts folder, so do that
+
+*************URLS.PY*************
+Here we need to import a couple of things
+from django.urls import path
+from django.contrib.auth import views as auth_views
+from . import views
+Django has a log in and a log out view, so by importing auth_views, django takes care of the work for us
+from . will import my own views file, the . will look in the current directory
+
+Create an app_name variable and call it 'accounts'
+
+Now we can setup our urls patterns list as follows
+using the auth_views, we call LoginView off of this and set it to a as_view
+We then set the variable template_name to accounts/login.html and give it the name accounts (template_name is a django keyword)
+
+Add the next url
+using the auth_views, we call LogOUTView off of this and set it to a as_view and give it the name accounts
+
+And the signup view and call our view and give it the name signup
+
+from django.urls import path
+from django.contrib.auth import views as auth_views
+from . import views
+
+app_name = 'accounts'
+
+urlpatterns = [
+    path('login/', auth_views.LoginView.as_view(template_name='accounts/login.html'), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('signup/', views.SignUp.as_view(), name='signup'),
+]
+
+Any arguments passed to as_view() will override attributes set on the class.
+In this example, we set template_name on the LogInView.
+
+*************URLS.PY MAIN*************
+We can now link up our accounts app to our project using views and urls
+So navigate to the main urls.py file which in our case is located in simplesocial/simplesocial
+We can now connect the urls to the login for accounts
+
+Create a new path and link it to accounts, then include the accounts urls.py file and give it the name accounts
+namespace indicates the application name, which you also mention at application urls.py as app_name='accounts'.
+Add another path and point it to accounts and include auth.urls
+
+django.contrib.auth.urls will include the following urls patterns
+accounts/login/ [name='login']
+accounts/logout/ [name='logout']
+accounts/password_change/ [name='password_change']
+accounts/password_change/done/ [name='password_change_done']
+accounts/password_reset/ [name='password_reset']
+accounts/password_reset/done/ [name='password_reset_done']
+accounts/reset/<uidb64>/<token>/ [name='password_reset_confirm']
+accounts/reset/done/ [name='password_reset_complete']
+
+from django.contrib import admin
+from django.urls import path, include
+from . import views
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', views.HomePage.as_view(), name='home'),
+    path('accounts/', include('accounts.urls', namespace='accounts')),
+    path('accounts/', include('django.contrib.auth.urls')),
+]
+
+*************BASE.HTML*************
+Now head over to the base.html file, in our case located in simplesocial/templates
+At the top of the page, load static so we can use it as follows
+{% load static %}
+Give it the title of Star Social
+Add the bootstrap link (we are using bootstrap4)
+Add the js scripts just before the closing body tag
+Download Montserrat from google fonts, place the link just after the bootstrap link
+Create a link to our custom css file, located in static/simplesocial/css/master.css
+static means go and look in the static directory for our file
+
+Now inside the body but outside the block we want our navbar
+Put the navbar in a div with a class of container and give it an id of navbar
+Add a brand and also add mynav class incase we want to add css styling later, add a url path to the name home in the urls.py file, which will take you to the home page
+The button at the top is for the hamburger when the screen is collapsed
+Add a ul and set the margin to sit over to the right
+We first check to see if a user is authenticated
+First link is Post
+Next one is Groups
+Next one is Create Group
+Finally a log out link and using template tagging point it to the logout view in the accounts folder urls.py file in the url LogOut pattern view
+
+Now to add the options if the user is not authenticated, so this will be an else
+They should still be able to see groups even if they are not authenticated
+So add a link to Groups
+Add a link to log in using template tagging to point to the login view in the accounts folder urls.py file in the url LogIn pattern view
+Final link to sigh up which points to the signup view in the accounts folder urls.py file in the url LogUp pattern view
+Finally add an endif in template tags
+
+Put the block content in a div with a class of container and mycontent
+<body>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light" id="navbar">
+    <div class="container">
+      <a class="navbar-brand mynav" href="{% url 'home' %}">Star Social</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav ml-auto">
+          {% if user.is_authenticated%}
+          <li class="nav-item">
+            <a class="nav-link" href="#">Post</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Groups</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Create Group</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'accounts:logout' %}">Log Out</a>
+          </li>
+          {% else %}
+          <li class="nav-item">
+            <a class="nav-link" href="#">Groups</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'accounts:login' %}">Log In</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'accounts:signup' %}">Sign Up</a>
+          </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mycontent">
+    {% block content %}
+
+    {% endblock content %}
+  </div>
+
+*************SETTINGS.PY*************
+We need to setup the redirect for the login and logout views are going to call
+Open the settings.py file, located in our case in simplesocial/simplesocial folder
+Open the file and scroll to the bottom
+Set the login redirect url goto a test page
+Set the logout redirect url goto a thanks page
+LOGIN_REDIRECT_URL = 'test'
+LOGOUT_REDIRECT_URL = 'thanks'
+
+*************TEST.PY AND THANKS.PY*************
+So now we need to create those 2 templates in our top level templates folder, in our case  simplesocial/templates
+
+Extend the test page from the base.html page
+Add and end the block content
+Add a h1 heading and add the text You are now logged in
+{% extends 'base.html' %}
+
+{% block content %}
+
+  <h1>You are now logged in</h1>
+
+{% endblock content %}
+
+Now for the thanks page
+Extend the test page from the base.html page
+Add and end the block content
+Add a h1 heading and add the text Thanks for visiting, come back soon
+
+{% extends 'base.html' %}
+
+{% block content %}
+
+  <h1>Thanks for visiting, come back soon</h1>
+
+{% endblock content %}
+
+*************VIEWS.PY MAIN*************
+We now need to set those files up with our social app
+So in the simplesocial/simplesocial open the views.py file
+Here we can add in the test and thanks page views
+
+Add a class called TestPage and inherit TemplateView
+Set the template_name to the test html page
+
+Add another class called ThanksPage and inherit TemplateView
+Set the template_name to the thanks html page
+
+*************URLS.PY MAIN*************
+We now need to link the views to our urls.py file
+So open the urls.py file in our case located in simplesocial/simplesocial
+Add a new path and point it to the test page
+Point the view to the test page and give it the name test
+Add another new path and point it to the thanks page
+Point the view to the thanks page and give it the name thanks
+
+from django.contrib import admin
+from django.urls import path, include
+from . import views
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', views.HomePage.as_view(), name='home'),
+    path('accounts/', include('accounts.urls', namespace="accounts")),
+    path('accounts/', include('django.contrib.auth.urls')),
+    path('test/', views.TestPage.as_view(), name='test'),
+    path('thanks/', views.ThanksPage.as_view(), name='thanks'),
+    path('posts/', include("posts.urls", namespace="posts")),
+    path('groups/',include("groups.urls", namespace="groups")),
+]
+
+Now we need to migrate all the changes we made to the accounts app and make sure we have no errors
+So in the command line type the following
+python manage.py migrate
+python manage.py makemigrations accounts (this should create the model User as in our models.py file)
+python manage.py migrate (should see it has applied those migrations)
+Now run the server to see if it all works by typing in the command line
+python manage.py runserver
+As long as you get no errors, copy and paste the http into your browser window
+
+*************GROUPS AND POSTS*************
+Now we can setup the views, urls and templates for the groups and posts, as they are interconnected, we need to do them both at the same time
+First we need to create the dirs and files we are going to need
+But first we need to create the apps,
+So in the terminal type
+django-admin startapp posts
+django-admin startapp groups
+
+*************POSTS APP*************
+First lets create the files we need in the posts app, located in our case in simple_social_clone/simplesocial
+Inside the posts folder, create a new folder named templates
+Then inside the templates folder, create a new folder named posts
+Then inside posts, in our case simple_social_clone/simplesocial/posts/templates/posts create the following html files
+post_base.html (this is what we will extend from)
+post_confirm_delete.html (confirms if the user wants to delete the post)
+post_detail.html (details all the posts)
+post_form.html (when someone wants to create a post, it generates a form)
+post_list.html (list all the posts as a list)
+user_post_list.html (if you click on a user, it will list all their posts)
+_post.html (we will use this file to inject it into other post.html files)
+
+Now inside of the posts app, in our case located simple_social_clone/simplesocial, we will add a urls.py file and a forms.py file
+
+*************GROUPS APP*************
+Now lets create the files we need in the posts app, located in our case in simple_social_clone/simplesocial
+Inside the groups folder, create a new folder named templates
+Then inside the templates folder, create a new folder named groups
+Then inside groups, in our case simple_social_clone/simplesocial/groups/templates/posts create the following html files
+group_base.html (this is what we will extend from)
+group_detail.html (details all the groups)
+group_form.html (when someone wants to create a group, it generates a form)
+group_list.html (list all the groups as a list)
+
+Now inside of the groups app, in our case located simple_social_clone/simplesocial, we will add a urls.py file
+
+*************GROUPS AND POSTS SETTING UP*************
+
+*************GROUPS MODELS.PY*************
+First we will setup the group models.py file, in our case located in simple_social_clone/simplesocial/groups
+So open that file
+We need to do some imports, first we will import slugify. A Slug is a short label for something, containing only letters, underscores or hyphens.
+Next import misaka, this allows markdown to be used. Markdown allows you to easily write things in italiz,bold, large font etc... using special codes, like # and <i>
+usually you can't use this in a normal text box with html, the misaka library adds in that functionality
+import misaka
+To use this, we need to install it, so in the terminal type pip install misaka
+or if you are having issues conda install -c conda-forge/label/cf202003 misaka
+Next import reverse
+Then import auth get user model, which returns the active user model
+Then add a variable named User and set it = to get_user_model() (this allows me to call things off of the current user session)
+Then import template
+Then add a variable named register and set it = to template.Library() (this allows us to use custom template tags)
+
+Now we can create our main model named Group, this will inherit from models.Model
+In the group class we will add an attribute called name and set it = models.CharField with a max_length of 255 with unique set to True
+Now set the attribute slug = models.SlugField and allow_unicode=True and set unique to True
+Add a description attribute and set it = models.TextField, set blank to True, so it can be blank, and set the default value to a empty string ''
+Add a description_html attribute and set it = models.TextField, set editable to False, default value to a empty string '' and blank is True, this converts the main message to html format
+Add a members attribute and set it to = models.ManyToManyField, pass in a User object and the through argument will be through the GroupMember class
+
+Now add a function for a string represention and return self.name
+
+Add a function to save, so when you want to save a group
+Name the function save, pass in self and *args and **kwargs
+Set the self.slug to = slugify(name), so this will remove whitespace and lowercasing
+Set self.description_html to = misaka.html, this allows markdown to be used, pass in self.description
+then call super().save(*args, **kwargs)
+
+Add another function and name it get_absolute_url, pass in self
+This will return a reverse call to groups:single and have a dict called kwargs and have 'slugs:' self.slug
+
+Then add the Meta class
+Set ordering to = ['name']
+
+Then add a 2nd class name GroupMember, this will inherit from models.Model
+In the GroupMember class we will create a group attribute
+Link this with a ForeignKey to the Group class, with a related_name='memberships', on_delete=models.CASCADE
+Then we create a user attribute
+Link this with a ForeignKey to the User class, with a related_name='user_groups', on_delete=models.CASCADE
+
+Now add a function for a string represention and return self.user.username
+
+Now add the Meta class and call unique_together and set it to = a list 'group', 'user', this will link a group to a user
+
+from django.db import models
+from django.utils.text import slugify
+
+import misaka
+from django.urls import reverse
+
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
+from django import template
+register = template.Library()
+
+# Create your models here.
+class Group(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+    slug = models.SlugField(allow_unicode=True, unique=True)
+    description = models.TextField(blank=True, default='')
+    description_html = models.TextField(editable=False, default='', blank=True)
+    members = models.ManyToManyField(User, through='GroupMember')
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.name)
+        self.description_html = misaka.html(self.description)
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse('groups:single', kwargs={'slug':self.slug})
+
+    class Meta:
+        ordering = ['name']
+
+class GroupMember(models.Model):
+    group = models.ForeignKey(Group, related_name='memberships', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, related_name='user_groups', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.user.username
+
+    class Meta:
+        unique_together = ('group', 'user')
+
+*************POSTS MODELS.PY*************
+Now we can setup the posts model.py file, in our case located simple_social_clone/simplesocial
+First we need to do a couple of imports as follows
+First we import reverse, from django.urls import reverse, when someone creates a post, this will send them back somewhere
+Then import settings, from django.conf import settings
+Next import misaka, markdown allows you to easily write things in italiz,bold, large font etc... using special codes, like # and <i>
+usually you can't use this in a normal text box with html, the misaka library adds in that functionality
+import misaka
+Next import Groups from groups.models, this allows us to connect a post to a group. from groups.models import Group
+Then import auth get user model, which returns the active user model. from django.contrib.auth import get_user_model
+
+Create a User object, User = get_user_model(), this connects the current user to a post
+
+Now we can create our classes
+First create a class called Post, inherit models.Model
+In the class Post we will add an attribute called user and set it = models.ForeignKey(User, related_name='posts', on_delete=models.CASCADE)
+Create a field called created_at and set it to = a DateTimeField with auto set to True, this will auto connect the date time the post was created
+Create a field called message and set it to = models.TextField, this is where the user type any messages
+Create a field called message_html and set it to = models.TextField and set editable to False so it cannot be edited, this converts the main message to html format
+Create a field called group and set it to = models.ForeignKey and pass in Group and related_name of posts, set null and blank to True, on_delete=models.CASCADE
+
+Now add a function for a string represention and return self.message
+
+Add a function to save, so when you want to save a post, pass in self, *args, **kwargs
+Set self.message_html to = misaka.html, this allows markdown to be used, pass in self.message
+then call super().save(*args, **kwargs)
+
+Add another function and name it get_absolute_url, pass in self
+This will return a reverse call to posts:single and have a dict called kwargs {'username':self.user.username, 'pk':self.pk}
+
+
+Now add the Meta class and call ordering and set it = ['-created_at'], the - will order it descending order
+Call unique_together and set it to = a list 'user', 'message', this will link a user to a message
+
+from django.db import models
+from django.urls import reverse
+from django.conf import settings
+
+import misaka
+
+from groups.models import Group
+
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
+# Create your models here.
+class Post(models.Model):
+    user = models.ForeignKey(User, related_name='posts', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now=True)
+    message = models.TextField()
+    message_html = models.TextField(editable=False)
+    group = models.ForeignKey(Group, related_name='posts', null=True, blank=True, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.message
+
+    def save(self, *args, **kwargs):
+        self.message_html = misaka.html(self.message)
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse('posts:single', kwargs={'username':self.user.username, 'pk':self.pk})
+
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ['user', 'message']
+
+
+*************GROUP VIEWS.PY*************
+We can now create the views for the Group templates and connecting them to the template files
+Open the views.py file, in our case located simple_social_clone/simplesocial/groups
+First we will do a couple of imports
+From the auth.mixins module and we will import LoginRequiredMixin and PermissionRequiredMixin
+LoginRequiredMixin will request that any non-authenticated users will be redirected to the login page or shown an HTTP 403 Forbidden error.
+PermissionRequiredMixin will check whether the user accessing a view has all given permissions.
+From URLS we will import reverse
+The reverse function allows to retrieve url details from url's.py file through the name value provided there
+From views we will import our generic class based views, you could also import the views you are going to use directly as follows
+from django.views.generic import CreateView etc
+
+Now lets create a class and name it CreateGroup, it will take in the LoginRequiredMixin, also the CreateView from generic
+Inside the class, we specify the fields we want them to have when they create a group
+Add a variable called fields and set it to = name and description (these fields are linked to the Groups class in the groups model.py file)
+We now need to connect the class to the model
+So we create a field and name it model and set it to = Group, as we are connecting it to the Group model, we need to import it, so
+from groups.model (could also use .models),  import Group, GroupMember, this way we can call them throughout these class based views
+
+Now lets create a list view
+Add a class and name it SingleGroup, pass in generic.DetailView
+Add a field called model and set it to = Group
+Add another class and name it ListGroups, pass in generic.ListView
+Add a field called model and set it to = Group
+
+Now we can create the template files that connect the classes
+
+*************GROUP BASE.HTML*************
+Open the group_base.htm file, in our case located in simple_social_clone/simplesocial/groups/templatea/groups
+First extend from our main base.html files
+Add and end a content block
+Inside the block, Add a div with the class of container
+Add another div with a class of row
+We will add and end 3 blocks inside the row div as follows
+block pregroup
+block group_content
+block postgroup
+
+{% extends 'base.html'% }
+
+{% block content %}
+
+  <div class="container">
+    <div class="row">
+      {% block pregroup %}
+      {% endblock pregroup %}
+
+      {% block group_content %}
+      {% endblock group_content %}
+
+      {% block postgroup %}
+      {% endblock postgroup %}
+    </div>
+  </div>
+
+{% endblock content %}
+
+*************GROUP DETAIL.HTML*************
+Open the group_detail.htm file, in our case located in simple_social_clone/simplesocial/groups/templates/groups
+Extend form the group_base.html file
+Add and end the pregroup block
+Add a div with a class of container
+Add a h1 tag and using template tagging, inject the group name
+group is the lowercase version of the Group class in group models.py (the context dictionary lowercases everything)
+Add a h2 and add the text Member Count (this will count how many members are in that particular group) inject a call to the context dictionary and count the members
+Inside the pregroup block, we will have a leave or join button
+So add a div, give it the class of content in case we want to style it later
+Inside the div add and end an if statement (so if the user is inside the list of all the members)
+
+Add an anchor tag and add a href to url groups:leave and set slug to group.slug (slug creates the auto dashes instead of spaces in the URL path.)
+Add a large button and set it to the colour warning
+Add a icon, to use this you need to add the kit source code from font awesome to the header of each page, or in our case to the project base.html file
+<!-- font awesone kit code -->
+<script src="https://kit.fontawesome.com/db0c1da081.js" crossorigin="anonymous"></script>
+Add the text leave
+
+Add an else statement as if they are not in the group, then they can join if they want to
+Add an anchor tag and add a href to url groups:join and set slug to group.slug (slug creates the auto dashes instead of spaces in the URL path.)
+Add a large button and set it to the colour warning
+Add a icon, to use this you need to add the kit source code from font awesome to the header of each page, or in our case to the project base.html file
+<!-- font awesone kit code -->
+<script src="https://kit.fontawesome.com/db0c1da081.js" crossorigin="anonymous"></script>
+Add the text join
+
+Outside the pregroup endblock, start and end a new block called group_content
+Add a div and give it the class col-md-8
+Add and end an if statement
+In the if statement check to see if the post count is == to 0,
+This comes from the related name in post/models Post class group = models.ForeignKey(Group, related_name='posts', null=True, blank=True, on_delete=models.CASCADE)
+Add a h2 that just says No posts in this group yet
+else
+Add and end a for loop
+In the for loop, loop through the posts in the current group
+This comes from the related name in post/models Post class group = models.ForeignKey(Group, related_name='posts', null=True, blank=True, on_delete=models.CASCADE)
+include 'posts/-post.html'
+Include loads a template and renders it with the current context. This is a way of “including” other templates within a template.
+
+{% extends 'groups/group_base.html' %}
+
+{% block pregroup %}
+<div class="container">
+  <h1>{{ group.name }}</h1>
+  <h2>Members Count: {{ group.members.count }}</h2>
+  <div class="content">
+    {% if user in group.members.all %}
+      <a href="{% url 'groups:leave' slug=group.slug %}" class="btn btn-lg btn-warning">
+        <i class="fas fa-user-slash"> Leave</i>
+      </a>
+    {% else %}
+    <a href="{% url 'groups:join' slug=group.slug %}" class="btn btn-lg btn-warning">
+      <i class="fas fa-user-plus"> Join</i>
+    </a>
+    {% endif %}
+  </div>
+</div>
+{% endblock pregroup %}
+
+{% block group_content %}
+
+  <div class="col-md-8">
+    {% if group.post.count == 0 %}
+      <h2>No posts in this group yet</h2>
+    {% else %}
+       {% for post in group.posts.all %}
+         {% include 'posts/_post.html' %}
+       {% endfor %}
+    {% endif %}
+  </div>
+
+{% endblock group_content%}
+
+*************GROUP LIST.HTML*************
+Open the group_list.htm file, in our case located in simple_social_clone/simplesocial/groups/templates/groups
+Extend from the group_base.html file
+Add and end the pregroup block
+Inside that block, add a div with a class of col-md-4
+Inside that div, add another div with a class of content
+We now need to check if a user is logged in and authenticated , display a welcome message or something
+So add and end an if statement. so if the user is_authenticated
+Add a h2 with the text Welcome Back, add a anchor tag inside the h2 that links to their profile, so if you click the link  it will go to the users posts
+If they are not authenticated
+Add a h2 outside the if statement that says Groups and a paragraph that says welcome to the groups page
+
+Outside the first div tag, we will again check if the user is_authenticated
+Add and end an if statement
+So if the user is authenticated, add an anchor tag which is linked to groups_create, add a button so the user can add create a group if they want
+Add font awesome icons as well and add the text Create New Group
+
+Add and end a new block called group_content
+Add a div with a class of col-md-8
+Add another div inside that div with a class of list_group
+Add and end a for loop
+Inside the for loop, add a anchor tag
+object.list will just be a list of all the groups
+The anchor tag has a link to the group name, so if you click that name, it will take you to that particular group
+Inside the anchor tag, add a div with a class of list-group-item-text  and a fluid container
+Inject the description with a safe which will for example show you bold instead of tags
+Inside that div, add another div with a class of row
+Inside that div add another div with a class of col-md-4
+Add a span with a class of badge, inside the span, inject the amount of members in the group
+Outside the span add the text members with the pipe operator pluralize, pluralize returns a plural suffix if the value is not 1. By default, 's' is used as the suffix:
+Add another div with a class of col-md-4
+Add a span with a class if badge, inject the amount of posts in that group
+Outside the span add the text post with the pipe operator pluralize, pluralize returns a plural suffix if the value is not 1. By default, 's' is used as the suffix:
+
+{% extends 'groups/group_base.html' %}
+
+{% block pregroup %}
+  <div class="col-md-4">
+    <div class="content">
+      {% if user.is_authenticated %}
+        <h2>Welcome Back <a href="{% url 'posts:for_user' username=user.username %}">@{{ user.username }}</a></h2>
+      {% endif %}
+        <h2>Groups</h2>
+        <p>Welcome to the groups page</p>
+    </div>
+      {% if user.is_authenticated %}
+        <a href="{% url 'groups:create' %}" class="btn btn-lg btn-warning"><i class="fas fa-plus"></i> Create New Group</a>
+      {% endif %}
+  </div>
+{% endblock pregroup %}
+
+{% block group_content %}
+  <div class="col-md-8">
+    <div class="list_group">
+      {% for group in object_list %}
+        <a class="list-group-item" href="{% url 'groups:single' slug=group.slug %}">
+          <h3 class="title list-group-item-heading">{{ group.name }}</h3>
+          <div class="list-group-item-text container-fluid">
+            {{ group.description_html|safe }}
+            <div class="row">
+              <div class="col-md-4">
+                <span class="badge">{{ group.members.count }}</span> member{{ group.members.count|pluralize }}
+              </div>
+              <div class="col-md-4">
+                <span class="badge">{{ groups.posts.count}}</span> post{{ group.posts.count|pluralize }}
+              </div>
+            </div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+{% endblock group_content %}
+
+*************GROUP FORM.HTML*************
+If someone clicks on create new group on the group_list page, they wil be taken to group create (href="{% url 'groups:create' %}")
+
+Open the group_form html file, in our case located in simple_social_clone/simplesocial/groups/templates/groups
+First extend from the group_base.html file
+As this is a from we need to load our boostrap, in our case bootstrap4
+Add and end a block named group_content
+Add a h4 inside the block and add the text Create a new group
+Add a form tag
+The action will link back to create view, method will be post and the id will be groupForm in case we want to add styling etc later
+Add our csrf token
+Call our bootstrap form and pass in the form
+Add an input block with a type of submit, value will be create, add a btn class of large and primary
+
+{% extends 'groups/group_base.html' %}
+
+{% load bootstrap4 %}
+
+{% block group_content %}
+  <h4>Create a new group</h4>
+  <form action="{% url 'groups:create' %}" method="POST" id="groupForm">
+    {% csrf_token %}
+    {% bootstrap_form form%}
+    <input type="submit" value="Create" class="btn btn-primary btn-lg">
+  </form>
+{% endblock group_content %}
+
+*************GROUP URLS.PY*************
+Now we can connect the views we created in groups to urls
+We also need to register the group model in the admin.py file
+So open the urls file, in our case located in simple_social_clone/simplesocial/groups/
+This is where will connect all the views we just made
+So first some imports
+from django.urls import path
+import the views from the groups folder from . import views
+Give the file an app_name of 'groups' so we can reference it later with template tagging
+Add a list called urlpatterns
+The first url will show the groups_list page, pass in the ListGroups class from the groups views.py file, as it is a class based view, you need to use as_view, name it all
+The next url will be the create page, so pass in new/, pass in the CreateGroup view as_view and give it the name create
+The next url will be the detail view, so pass in posts/in/<slug>, this will markdown the group name, pass in the SingleGroup view as_view and name it single
+
+from django.urls import path
+from . import views
+
+app_name = 'groups'
+
+urlpatterns = [
+    path('', views.ListGroups.as_view(), name='all'),
+    path('new/', views.CreateGroup.as_view(), name='create'),
+    path('posts/in/<slug>/', views.SingleGroup.as_view(), name='single'),
+]
+
+*************>GROUP ADMIN.PY*************
+We now need to register our group models which are Group and GroupMember in the group admin.py file, in our case located in simple_social_clone/simplesocial/groups
+first we need to import our models using from . import models
+Now we can add our group model
+Using a tabular inline class we create a class called GroupMemberInline and pass in admin.GroupMemberInline, that way we can edit the membvers on the admin page
+
+from django.contrib import admin
+from . import models
+
+# Register your models here.
+class GroupMemberInline(admin.TabularInline):
+    model = models.GroupMember
+
+admin.site.register(models.Group)
+
+*************POSTS*************
+Now we can start to setup the posts side of the application
+We need to install a library called django-braces, this provides useful Mixins for Django's class-based views
+
+*************POSTS VIEW.PY*************
+First lets work on the views.py file, in our case located in simple_social_clone/simplesocial/posts
+First we need to do a couple of imports
+from django.contrib.auth.mixins import LoginRequiredMixin, this means someone needs to be logged in to carry out certain things
+from django.urls import reverse_lazy, this is incase someone wants to delete a post, it will take them back
+from django.views import generic, this is for our class based views
+from django.http import http404, this is for errors
+from braces.views import SelectRelatedMixin, this is a simple mixin which allows you to specify a list or tuple of foreign key fields to perform a select_related on
+from . import models, this imports the models for the posts from the posts folder
+from groups.models import Group
+from . import forms, this imports the forms from the posts folder
+from django.contrib import messages
+from django.contrib.auth import get_user_model, this method will return the currently active User model
+set User to = get_user_model() as a function call
+
+Now we can start to add our classes, the first one will be the post list view
+Create a class and name it PostList and pass in SelectRelatedMixin, generic.ListView
+Connect it to a model by adding a field call model and set it to = models.Post (this is the Post class in the models.py file)
+Add a field call select_related and set it to = user and group, this provides a tuple of related models (the ForeignKeys for the post)
+Create another class called UserPosts and pass in the generic ListView
+Connect it to a model by adding a field call model and set it to = models.Post (this is the Post class in the models.py file)
+Add a template_name and set it to = posts/user_post_list.html (this is one of our posts template html files)
+Add a function to the class and name it get_queryset and pass in self
+Inside the method, we will use the keyword try and pass in self.post.user and set it to = User.objects.prefetch_related('posts').get(username__iexact=self.kwargs.get('username'))
+So what is happening, when the function is called, it will try to set the self.post.user to equal (the user that belongs to that particular post)
+It will prefetch_related posts  and try to match the user logged in to posts they have created
+We will then add an except of User DoesNotExist and raise a 404 error message if the user does not exist
+Add in an else statement to say return all the posts of that user
+Add another function and name it get_context_data and pass in self and kwargs
+Add a variable called context and set it to = super and call the kwargs of the get_context_data
+Add another variable named context as a list of posts and set it to = self.post_user
+finally return the context
+
+Add a new class and name it PostDetail, pass in the SelectRelatedMixin and the generic DetailView
+Add a field name model and set it to = models.Post (this is the Post class in the models.py file)
+Add a field call select_related and set it to = user and group, this provides a tuple of related models (the ForeignKeys for the post)
+Add a function and name it get_queryset and pass in self
+Add a variable called queryset and set it to = super().get_queryset
+Then return queryset.filter(user__username__iexact=self.kwargs.get('username'))
+What is happening here is it will retunr the posts as long as the usernames matces the current username
+
+Add another new class and name it CreatePost() and pass in LoginRequiredMixin, SelectRelatedMixin and generic.CreateView
+Now add field and set it to = message and group, this is all the user can edit
+Then add model and set it to = model.Post
+Check if the form is valid, so add a function and name it form_valid, pass in self and form
+Add self.object and set it to = form.save but set commit to False
+Add self.object.user and set it to = self.request.user
+Then save with self.object.save()
+Return super and then call form_valid and pass in form
+
+Finally we have DeletePost, so add that class and pass in LoginRequiredMixin, SelectRelatedMixin and generic.DeleteView
+Connect it to a model, model = models.post
+Add a field call select_related and set it to = user and group, this provides a tuple of related models (the ForeignKeys for the post)
+Add a success url and set it to = reverse_lazy and pass in posts:all (if succesful reverse_lazy will take you back to all the posts)
+Add a function and name it get_queryset and pass in self
+Set the queryset to = super().get_queryset
+return queryset with a filter of user_id is = request of the user
+Add another function and name it delete and pass in self and args and kwargs
+set message to = Post Deleted if successful
+return super()and .delete and add pass in args and kwargs
+
+from django.shortcuts import render
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse_lazy
+from django.views import generic
+from django.http import Http404
+from braces.views import SelectRelatedMixin
+from . import models
+from groups.models import Group
+from . import forms
+from django.contrib import messages
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
+# Create your views here.
+class PostList(SelectRelatedMixin, generic.ListView):
+    model = models.Post
+    select_related = ('user', 'group')
+
+class UserPosts(generic.ListView):
+    model = models.Post
+    template_name = 'posts/user_post_list.html'
+
+    def get_queryset(self):
+        try:
+            self.post_user = User.objects.prefetch_related('posts').get(username__iexact=self.kwargs.get('username'))
+        except User.DoesNotExist:
+            raise Http404
+        else:
+            return self.post_user.posts.all()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['posts'] = self.post_user
+        return context
+
+class PostDetail(SelectRelatedMixin, generic.DetailView):
+    model = models.Post
+    select_related = ('user','group')
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        return queryset.filter(user__username__iexact=self.kwargs.get('username'))
+
+class CreatePost(LoginRequiredMixin, SelectRelatedMixin, generic.CreateView):
+    fields = ('message', 'group')
+    model = models.Post
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.user = self.request.user
+        self.object.save()
+        return super().form_valid(form)
+
+class DeletePost(LoginRequiredMixin, SelectRelatedMixin, generic.DeleteView):
+    model = models.Post
+    select_related = ('user', 'group')
+    success_url = reverse_lazy('posts:all')
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        return queryset.filter(user_id=self.request.user.id)
+
+    def delete(self, *args, **kwargs):
+        messages.success(self.request, 'Post Deleted')
+        return super().delete(*args, **kwargs)
+
+*************POSTS URLS.PY*************
+We now need to link our views to our urls, so open the posts urls.py file, in our case located simple_social_clone/simplesocial/posts
+First we need to import paths so from django.urls import path
+We also need to import the posts.views.py so from . import views
+Give the app a name, so app_name = 'posts'
+Add our urlpatterns as a list and add our url patterns
+
+from django.urls import path
+from . import views
+
+app_name = 'posts'
+
+urlpatterns = [
+    path('', views.PostList.as_view(),name='all'),
+    path('new/', views.CreatePost.as_view(), name='create'),
+    path('by/<username>', views.UserPosts.as_view(), name='for_user'),
+    path('by/<username>/<int:pk>/', views.PostDetail.as_view(), name='single'),
+    path('delete/<int:pk>/', views.DeletePost.as_view(), name='delete'),
+]
+
+ *************POSTS TEMPLATES*************
+Now we have setup our views for the posts app ands the urls.py file, we can setup our template.html files for the posts page
+
+*************POSTS BASE.HTML*************
+We will first fill in the post_base.html file, in or case located in simple_social_clone/simplesocial/posts/templates/posts
+First we need to extend from the main project file base.html
+Add and end a content block
+Inside the block, add a div with a class of post-page in case we want to add styling later
+Inside that div, create another div with a class of container
+Inside that div, create another div with a class of row
+Now add and end 3 blocks named
+prepost
+post_content
+post_post
+
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="post-page">
+    <div class="container">
+      <div class="row">
+        {% block prepost %}
+        {% endblock prepost %}
+
+        {% block post_content %}
+        {% endblock post_content %}
+
+        {% block post_post %}
+        {% endblock post_post %}
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+************POSTS FORM.HTML*************
+Now we fill in the post_form.html file, in or case located in simple_social_clone/simplesocial/posts/templates/posts
+This is the template that is linked to creating a new post
+First we extend from the post_base.html file
+Then we need to load our bootstrap to apply styling in the form automatically
+Add and end a post_content block
+Add a h4 inside the block content and add the test Create a new post
+Insert the form tag, give it the id postForm, action will go to a url template of posts:create and set the method as POST
+The url will pick up this path in the urls.py "file path('new/', views.CreatePost.as_view(), name='create')"
+Add the csrf token inside the form
+Then call the bootstrap_form to style the form
+Add an input button withy a type of submit, add a primary button and set the value to be Post
+
+{% extends "posts/post_base.html" %}
+
+{% load bootstrap4 %}
+
+{% block post_content %}
+  <h4>Create a New Post</h4>
+  <form id="postForm" action="{% url 'posts:create' %}" method="POST">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    <input type="submit" class="btn btn-primary btn-lg" value="Post">
+  </form>
+{% endblock post_content %}
+
+************POSTS LIST.HTML*************
+Now we fill in the post_list.html file, in or case located in simple_social_clone/simplesocial/posts/templates/posts
+First we extend from the post_base.html file
+Then we call and end our blocks and name it prepost
+Add a div to the block and give it a class of col-md-4
+Then we will check if the user is_authenticated, so add and end a if statement (request.user.is_authenticated is the same as user.is_authenticated)
+Add a div inside the for loop and give it the class card card-with-shadow
+Add a div inside that div, and give it the class content
+Add a h5 with a class of title and add the text Your Groups
+Then create an un-ordered list with a class of list-unstyled
+Add a end a for loop inside the un-ordered list, in the for loop, add a variable name, we will use member_group, but can be anything, then loop through the user.user_groups.all
+The user_groups, comes from the groups model.py file. As we added this piece of code in the groups model.py file
+from django import template
+register = template.Library()
+We can then use related name in another file, so in the class GroupMember class, we had user = and the related name is user_groups
+user = models.ForeignKey(User, related_name='user_groups', on_delete=models.CASCADE)
+So carrying on, so for every group you are a member of, add a list item with a class group li-with-bullet of and also add an anchor tag inside the list item
+The name single links to the PostDetail class via the urls.py file
+path('by/<username>/<int:pk>/', views.PostDetail.as_view(), name='single'),
+Set the slug to = member_group.group.slug
+Inject the content {{ member_group.group.name }}
+After the endif, add another div with a class of card card-with-shadow
+Add a div inside that div with a class of content
+Add a h5 with a class of title and add the text to say All Groups
+Add an un-ordered list with a class of list-unstyled
+Add and end a for loop and loop through group
+Add a list item and give it a class of group li-with-bullet and then an anchor tag, set the anchor tag to direct to a url groups:single using a url template
+The name single links to the PostDetail class via the urls.py file
+path('by/<username>/<int:pk>/', views.PostDetail.as_view(), name='single'),
+Set the slug to = group.slug and inject the content {{ group.slug }}
+
+After the end preblock, add and end another block called post_content
+Add a div with the class col-md-8
+Add and end a for loop loop through post_list
+Add an include and include posts/_post.html
+
+To understand where post_list comes from, it comes from posts views.py file class
+In PostListView you have used model= models.Post
+post_list will be created for template tagging.
+Django will lowercase the Post (this is where the post in post_list comes from)
+list comes from the built in ListView which was passed in in PostList
+class PostList(SelectRelatedMixin, generic.ListView):
+    model = models.Post <------------------------
+    select_related = ('user', 'group')
+So django will then list all posts by looping through post_list which is being created automatically by django behind the scenes, and all the posts will be available to you in post_list
+posts views.py
+Even, if you use object_list instead of post_list, you will get all posts.
+
+{% extends 'posts/post_base.html' %}
+
+{% block prepost %}
+  <div class="col-md-4">
+    {% if request.user.is_authenticated %}
+    <div class="card card-with-shadow">
+      <div class="content">
+        <h5 class="title">Your Groups</h5>
+        <ul class="list-unstyled">
+           {% for member_group in user.user_groups.all %}
+          <li class="group li-with-bullet">
+            <a href="{% url 'groups:single' slug=member_group.group.slug %}">{{ member_group.group.name }}</a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+    <div class="card card-with-shadow">
+      <div class="content">
+        <h5 class="title">All Groups</h5>
+        <ul class="list-unstyled">
+          {% for group in all_groups %}
+          <li class="group li-with-bullet">
+            <a href="{% url 'groups:single' slug=group.slug %}">{{ group.slug }}</a>
+          </li>
+          {% endfor%}
+        </ul>
+      </div>
+    </div>
+  </div>
+{% endblock prepost %}
+
+{% block post_content %}
+  <div class="col-md-8">
+    {% for post in post_list %}
+    {% include 'posts/_post.html' %}
+    {% endfor %}
+  </div>
+{% endblock post_content %}
+
+************-POSTS.HTML*************
+As we included _post.html in our post_list.html file, we can work on that next, so in our case it is located simple_social_clone/simplesocial/posts/templates/posts
+We dont need to extend as we are going to directly inject this into post_list.html using include
+Add a div and give it the class post media
+Add a h3 and inject post.message_html, this is from the Post class in the post models.py file, make it safe
+Add another div with a class of media-body
+Add a strong call and inject the user name
+Add a h5 with a class of media heading and inside the h5
+Add a span with a class of username
+Add a anchor tag and add a url reference to post:for_user and set username to = post.user.username
+for_user comes from posts urls.py
+path('by/<username>', views.UserPosts.as_view(), name='for_user'),
+Now add a time tag which will allow us to post a time when the post was created, add a class called time
+Add a anchor tag with a url tag to posts single and set username to = post.user.username where the pk=post.pk
+posts single comes from posts urls.py
+path('by/<username>/<int:pk>/', views.PostDetail.as_view(), name='single'),
+
+After the h5, add a div with the class media-footer
+Add and end an if statement
+Check if the user is_authenticated and if the current post belongs to that user
+Add an anchor tag using url template tagging, send them to posts:delete and where the pk=post.pk
+Add a title called delete and a class called btn btn-secondary
+Add a font awesome i tag
+Add a span with a class of text-danger icon-label and set aria to hidden
+posts:delete sends them to posts urls.py  path('delete/<int:pk>/', views.DeletePost.as_view(), name='delete'),
+
+<div class="post media">
+  <h3 class="mr-5"><a href="{% url 'posts:for_user' username=post.user.username %}">@{{ post.user.username }}</a></h3>
+  <div class="media-body">
+    <h5>{{ post.message_html|safe }}</h5>
+    <time class="time"><a href="{% url 'posts:single' username=post.user.username pk=post.pk %}">{{ post.created_at }}</a></time>
+    {% if post.group %}
+    <span class="group-name">in <a href="#">{{ post.group.name }}</a></span>
+    {% endif %}
+
+    <div class="media-footer">
+      {% if user.is_authenticated and post.user == user %}
+      <a href="{% url 'posts:delete' pk=post.pk %}" title="delete" class="btn btn-secondary">
+        <i class="fas fa-trash-alt" aria-hidden=true></i>
+        <span class="text-danger icon-label">Delete</span>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+************CONFIRM DELETE.HTML*************
+OPTION 1
+We can now fill in our confirm delete html file, in our case located simple_social_clone/simplesocial/posts/templates/posts
+First we need to extend from our post base.html file
+Then we add and end a block tag named post_content
+Add a h3 with the text of Are you sure you want to delete this post?
+Add a div with a class of posts
+And using template tagging, we include our _post.html file and post=object hide_delete=True
+Then we add our form and set the method to POST
+Add our csrf token
+Add an input with a type of submit and a value of confirm delete, add a class of btn btn.danger and make it large
+Add a anchor tag and set the url 'posts:single' username=user.username pk=object.pk % } and add the text cancel and a btn class
+The anchor tag is a cancel button in case they dont want to delete the post, it will take them back to the post
+
+{% extends 'posts/post_base.html'%}
+
+{% block post_content %}
+  <h3>Are you sure you want to delete this post?</h3>
+    <div class="posts">
+      {% include 'posts/_post.html' with post=object hide_delete=True %}
+    </div>
+    <form method="POST">
+      {% csrf_token %}
+      <input type="submit" value="Confirm Delete" class="btn btn-danger btn-lg">
+      <a class="btn btn-secondary btn-lg "href="{% url 'posts:single' username=user.username pk=object.pk % }">Cancel</a>
+    </form>
+{% endblock post_content %}
+
+OPTION 2
+I have changed the code as it was too messy on the page injecting the whole content from the _post.html page so
+First we need to extend from our post base.html file
+Then we add and end a block tag named post_content
+Add a div with a class of container
+Add a h3 with the text of Are you sure you want to delete the post titled:
+Add a h2 strong tag with and inject the post title using temple tagging
+Then we add our form and set the method to POST
+Add our csrf token
+Add an input with a type of submit and a value of confirm delete, add a class of btn btn.danger and make it large
+Add a anchor tag and set the url 'posts:single' username=user.username pk=object.pk % } and add the text cancel and a btn class
+The anchor tag is a cancel button in case they dont want to delete the post, it will take them back to the post
+
+{% extends 'posts/post_base.html' %}
+
+{% block post_content %}
+<div class="container">
+  <h3>Are you sure you want to delete the post titled:</h3>
+  <h2><strong>{{ post.message_html|safe }}</strong></h2>
+</div>
+  <form method="POST">
+    {% csrf_token %}
+    <input type="submit" value="Confirm Delete" class="btn btn-danger btn-lg">
+    <a class="btn btn-warning btn-lg" href="{% url 'posts:single' username=user.username pk=object.pk % }">Cancel</a>
+  </form>
+{% endblock post_content %}
+************POST DETAIL.HTML*************
+Now we can fill in the post_detail.html. in our case located simple_social_clone/simplesocial/posts/templates/posts
+First we need to extend from our post_base.html
+Add and end a block called post_content
+Add a div with a class of col-md-8
+Then include using template tagging, we include our _post.html file
+All the main work is being done in _post.html file
+
+{% extends 'posts/post_base.html' %}
+
+{% block post_content %}
+  <div class="col-md-8">
+    {% include 'posts/_post.html' %}
+  </div>
+{% endblock post_content %}
+
+***********USER POST LIST.HTML*************
+Now we can tackle our user_post_list.html file, in our case located simple_social_clone/simplesocial/posts/templates/posts
+First we need to extend from our post_base.html
+Add and end a block named prepost
+Add a div with a class of col-md-4
+Add a h1 and add @{{ post_user.username }}
+Add and end another block named post_content
+Add a div with a class of col-md-8
+Add and end a for loop and loop through post in post_list
+Include our post/_post.html file
+
+To understand where post_list comes from, it comes from posts views.py file class
+In PostListView you have used model= models.Post
+post_list will be created for template tagging.
+Django will lowercase the Post (this is where the post in post_list comes from)
+list comes from the built in ListView which was passed in in PostList
+class PostList(SelectRelatedMixin, generic.ListView):
+    model = models.Post <------------------------
+    select_related = ('user', 'group')
+So django will then list all posts by looping through post_list which is being created automatically by django behind the scenes, and all the posts will be available to you in post_list
+posts views.py
+Even, if you use object_list instead of post_list, you will get all posts.
+
+{% extends 'posts/post_base.html' %}
+
+{% block prepost %}
+  <div class="col-md-4">
+    <h1>@{{ post_user.username }}</h1>
+  </div>
+{% endblock prepost %}
+
+{% block post_content %}
+  <div class="col-md-8">
+     {% for post in post_list  %}
+     {% include 'posts/_post.html'%}
+     {% endfor %}
+  </div>
+{% endblock post_content %}
+
+***********GROUPS VIEW.PY*************
+Import models
+We need to add views for the leave and join groups, so open the views.py file, in our case located simple_social_clone/simplesocial/groups/
+Add 2 more class based views named JoinGroup and LeaveGroup
+So to join a group, you need to be logged in, so pass in the default django login call of LoginRequiredMixin and add a generic redirect class based view
+Add a function call and name it the default get_redirect_url, pass in self, *args and **kwargs, this allows us to redirect them to whatever url we want them to go to on redirect
+return a reverese call and redirect to groups:single which is a name in our groups urls.py file
+Add a kwargs dictionary and set it to 'slug':self.kwargs.get('slug')
+
+Now lets add checks to make sure that the user is not already a user
+So add a function call name it get and pass in self, request, args and kwargs
+Define the group as get_object_or_404_error. to use get_object, we need to import it, so at the top of the file, add
+from django.shortcuts import get_object_or_404
+Pass in Group, and set slug to = self.kwargs.get('slug')
+Then add a try block
+Call GroupMember.objects.create(user=self.request.user, group=group)
+This means I will try to get the GroupMember objects
+Create one where the user = to the current user
+Add an except block with an IntegrityError
+Set messages.warning (we need to import this first at the top of the page)
+Pass in self.request with a warning message that they are already a member
+Else display a success message saying they are now a member
+Then return super().get(request, *args, **kwargs)
+
+Now lets create our class to leave a group
+So to leave a group you need to be logged in, so pass in the default django login call of LoginRequiredMixin and add a generic redirect class based view
+Add a function call and name it the default get_redirect_url, pass in self, *args and **kwargs, this allows us to redirect them to whatever url we want them to go to on redirect
+return a reverese call and redirect to groups:single which is a name in our groups urls.py file
+Add a kwargs dictionary and set it to 'slug':self.kwargs.get('slug')
+
+Lets add some checks to make sure they are part of the group they are trying to leave
+So add a function call name it get and pass in self, request, args and kwargs
+Add a field called membership and set it to = models.GroupMember.objects, filter the objects
+Set the filter to user=self.request.user, group__slug=self.kwargs.get('slug')).get()
+Add a except block and if the object does not exist
+Add a warning message to say they are not part of the group they are trying to leave
+Add an else statement, and call a delete method off of membership
+Add a message that they have left the group
+Finally return super().get and pass in request, args and kwargs
+
+from django.shortcuts import render
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.urls import reverse
+from django.views import generic
+from groups.models import Group, GroupMember
+from django.shortcuts import get_object_or_404
+from django.contrib import messages
+from . import models
+
+# Create your views here.
+class CreateGroup(LoginRequiredMixin, generic.CreateView):
+    fields = ('name', 'description')
+    model = Group
+
+class SingleGroup(generic.DetailView):
+    model = Group
+
+class ListGroups(generic.ListView):
+    model = Group
+
+class JoinGroup(LoginRequiredMixin, generic.RedirectView):
+
+    def get_redirect_url(self, *args, **kwargs):
+        return reverse('groups:single', kwargs={'slug':self.kwargs.get('slug')})
+
+    def get(self, request, *args, **kwargs):
+        group = get_object_or_404(Group, slug=self.kwargs.get('slug'))
+
+        try:
+            GroupMember.objects.create(user=self.request.user, group=group)
+        except IntegrityError:
+            messages.warning(self.request, 'Warning, already a member')
+        else:
+            messages.success(self.request, 'You are now a member')
+        return super().get(request, *args, **kwargs)
+
+
+class LeaveGroup(LoginRequiredMixin, generic.RedirectView):
+
+    def get_redirect_url(self, *args, **kwargs):
+        return reverse('groups:single', kwargs={'slug':self.kwargs.get('slug')})
+
+    def get(self, request, *args, **kwargs):
+
+        try:
+            membership = models.GroupMember.objects.filter(user=self.request.user, group__slug=self.kwargs.get('slug')).get()
+        except models.GroupMember.DoesNotExist:
+            messages.warning(self.request, 'Sorry you are not in this group')
+        else:
+            membership.delete()
+            messages.success(self.request, 'Uou have left the group')
+        return super().get(request, *args, **kwargs)
+
+ ***********GROUPS URLS.PY*************
+We now need to connect ur new views to our urls.py file, in our case simple_social_clone/simplesocial/groups/
+Now we can add in the leav and join view
+For the join, add a path to join/<slug>
+Set views as JoinGroup as_view with a name of join
+For the leave, add a path to leave/<slug>
+Set views as LeaveGroup as_view with a name of leave
+
+from django.urls import path
+from . import views
+
+app_name = 'groups'
+
+urlpatterns = [
+    path('', views.ListGroups.as_view(), name='all'),
+    path('new/', views.CreateGroup.as_view(), name='create'),
+    path('posts/in/<slug>/', views.SingleGroup.as_view(), name='single'),
+    path("join/<slug>/",views.JoinGroup.as_view(),name="join"),
+    path("leave/<slug>/",views.LeaveGroup.as_view(),name="leave"),
+]
+
+***********SETTINGS.PY*************
+We need to add the groups and posts apps, so open the settings.py file, in our case located in simple_social_clone/simplesocial
+Scroll down to installed apps and add groups and posts
+
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'bootstrap4',
+    'accounts',
+    'groups',
+    'posts',
+]
+
+***********PROJECT BASE.HTML*************
+We need to add the links in the navbar, so open the project base.html file, in our case located in simple_social_clone/simplesocial/templates/
+For the Post link we add href="{%url 'posts:create' %}"
+For the Groups link we add href="{%url 'groups:all' %}"
+For the Create Group link we add href="{%url 'groups:create' %}"
+For the Groups link in the else statement we add href="{%url 'groups:all' %}"
+
+
+<div class="collapse navbar-collapse" id="navbarSupportedContent">
+  <ul class="navbar-nav ml-auto">
+    {% if user.is_authenticated%}
+    <li class="nav-item">
+      <a class="nav-link" href="{%url 'posts:create' %}">Post</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="{%url 'groups:all' %}">Groups</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link"href="{%url 'groups:create' %}">Create Group</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'accounts:logout' %}">Log Out</a>
+    </li>
+    {% else %}
+    <li class="nav-item">
+      <a class="nav-link" href="{%url 'groups:all' %}">Groups</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'accounts:login' %}">Log In</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'accounts:signup' %}">Sign Up</a>
+    </li>
+    {% endif %}
+  </ul>
+</div>
+</div>
+</nav>
+
+***********RUNNING THE APP*************
+Now we need to do the migrations, so in the terminal type
+python manage.py migrate
+python manage.py makemigrations
+If there are no errors, then make the migrations one by one as follows
+python manage.py makemigrations groups
+python manage.py makemigrations posts
+Then migrate again by typing python manage.py migrate
+Now we can run the project to see if we need to debug, so in the terminal type
+python manage.py runserver
+As long as you have no errors, copy the http address and copy it into your browser window
+
+Goto sign up, I have signed up as Tony, email tonydav43@hotmail.co.uk, password is testpassword
+
+***********CUSTOM CSS AND JAVASCRIPT*************
+Now the app is up and running, we can add some custom css and javascript
+Now head over to the static dir, in our case located in simple_social_clone/simplesocial
+In the css folder, there is a file called css and in there is a file called master
+The path is simplesocial/static/css
+Here is where you can add styling as follows:
+.mycontent {
+  padding-top: 100px;
+  /* border: 10px solid red; */
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  /* background: #191063; */
+  margin: 0;
+}
+
+/* #note {
+  position: absolute;
+  color: rgba(249,241,204,1);
+  left: 0;
+  right: 0;
+  bottom: 20px;
+  margin: auto;
+  text-align: center;
+  user-select: none;
+  font-family: Arial;
+} */
+
+
+Then open the simplesocial folder and in the css and js folders, create a file in each called master
+The path for us is simplesocial/ststic/simplesocial
+In the master css file, we simply set the body to have a background black and the text white
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background-color: black;
+  color:white;
+}
+
+I have changed the navbar colour bu using navbar-custom class
+
+base.html
+<nav class="navbar navbar-expand-lg navbar-custom" id="navbar">
+
+master.css
+.navbar-custom {
+    background-color: black;
+    color: white:
+}
